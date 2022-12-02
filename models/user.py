@@ -1,11 +1,30 @@
 #!/usr/bin/python3
-"""This module defines a class User"""
-from models.base_model import BaseModel
+"""
+User module
+"""
+from models.base_model import BaseModel, Base
+from sqlalchemy import Column, String
 
 
-class User(BaseModel):
-    """This class defines a user by various attributes"""
-    email = ''
-    password = ''
-    first_name = ''
-    last_name = ''
+class User(BaseModel, Base):
+    """
+    Class User
+    """
+
+    __tablename__ = 'users'  #TODO change simple attr to table users
+    first_name = Column(
+        String(128),
+        nullable=False
+    )
+    last_name = Column(
+        String(128),
+        nullable=False
+    )
+    email = Column(
+        String(128),
+        nullable=False
+    )
+    password = Column(
+        String(128),
+        nullable=False
+    )
