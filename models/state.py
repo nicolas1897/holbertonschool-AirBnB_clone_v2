@@ -1,8 +1,18 @@
 #!/usr/bin/python3
-""" State Module for HBNB project """
-from models.base_model import BaseModel
+"""
+State module
+"""
+from models.base_model import BaseModel, Base
+from sqlalchemy import Column, String
 
 
-class State(BaseModel):
-    """ State class """
-    name = ""
+class State(BaseModel, Base):
+    """
+    Class State
+    """
+
+    __tablename__ = 'states'  #TODO change simple attr to table states
+    name = Column(
+        String(128)
+        nullable=False
+    )
