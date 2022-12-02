@@ -1,99 +1,97 @@
 #!/usr/bin/python3
-""" """
-from models.base_model import BaseModel
-import unittest
-import datetime
-from uuid import UUID
-import json
+'''Tests for BaseModel class'''
+import models
 import os
+import os.path
+import unittest
+from models.base_model import BaseModel
+from models.engine import file_storage
+from models.engine.file_storage import FileStorage
 
 
-class test_basemodel(unittest.TestCase):
-    """ """
-
-    def __init__(self, *args, **kwargs):
-        """ """
-        super().__init__(*args, **kwargs)
-        self.name = 'BaseModel'
-        self.value = BaseModel
+class TestBase_Model(unittest.TestCase):
+    '''Tests for BaseModel class'''
 
     def setUp(self):
-        """ """
-        pass
+        '''Object BaseModel created'''
+        self.obj = BaseModel()
 
-    def tearDown(self):
-        try:
-            os.remove('file.json')
-        except:
-            pass
+    def test_docstring(self):
+        '''Check if methods, classes
+        and modules have docstring'''
+        msj = "Module doesn't have docstring"
+        self.assertIsNotNone(models.base_model.__doc__, msj)  # Modules
+        msj = "Class doesn't have docstring"
+        self.assertIsNotNone(BaseModel.__doc__, msj)  # Classes
 
-    def test_default(self):
-        """ """
-        i = self.value()
-        self.assertEqual(type(i), self.value)
+    def test_executable_file(self):
+        '''Check if file have permissions to execute'''
+        # Check for read access
+        is_read_true = os.access('models/base_model.py', os.R_OK)
+        self.assertTrue(is_read_true)
+        # Check for write access
+        is_write_true = os.access('models/base_model.py', os.W_OK)
+        self.assertTrue(is_write_true)
+        # Check for execution access
+        is_exec_true = os.access('models/base_model.py', os.X_OK)
+        self.assertTrue(is_exec_true)
 
-    def test_kwargs(self):
-        """ """
-        i = self.value()
-        copy = i.to_dict()
-        new = BaseModel(**copy)
-        self.assertFalse(new is i)
-
-    def test_kwargs_int(self):
-        """ """
-        i = self.value()
-        copy = i.to_dict()
-        copy.update({1: 2})
-        with self.assertRaises(TypeError):
-            new = BaseModel(**copy)
-
-    def test_save(self):
-        """ Testing save """
-        i = self.value()
-        i.save()
-        key = self.name + "." + i.id
-        with open('file.json', 'r') as f:
-            j = json.load(f)
-            self.assertEqual(j[key], i.to_dict())
-
-    def test_str(self):
-        """ """
-        i = self.value()
-        self.assertEqual(str(i), '[{}] ({}) {}'.format(self.name, i.id,
-                         i.__dict__))
-
-    def test_todict(self):
-        """ """
-        i = self.value()
-        n = i.to_dict()
-        self.assertEqual(i.to_dict(), n)
-
-    def test_kwargs_none(self):
-        """ """
-        n = {None: None}
-        with self.assertRaises(TypeError):
-            new = self.value(**n)
-
-    def test_kwargs_one(self):
-        """ """
-        n = {'Name': 'test'}
-        with self.assertRaises(KeyError):
-            new = self.value(**n)
+    def test_instance(self):
+        '''Check if obj is an instance of BaseModel'''
+        self.assertIsInstance(self.obj, BaseModel)
 
     def test_id(self):
-        """ """
-        new = self.value()
-        self.assertEqual(type(new.id), str)
+        '''Compare if id of two instances are different'''
+        bm1 = BaseModel()
+        bm2 = BaseModel()
+        self.assertNotEqual(bm1.id, bm2.id)
 
-    def test_created_at(self):
-        """ """
-        new = self.value()
-        self.assertEqual(type(new.created_at), datetime.datetime)
+    def test_str(self):
+        '''Check if the output of str is in the correct format'''
+        _dict = self.obj.__dict__
+        string1 = "[BaseModel] ({}) {}".format(self.obj.id, _dict)
+        string2 = str(self.obj)
+        self.assertEqual(string1, string2)
 
-    def test_updated_at(self):
-        """ """
-        new = self.value()
-        self.assertEqual(type(new.updated_at), datetime.datetime)
-        n = new.to_dict()
-        new = BaseModel(**n)
-        self.assertFalse(new.created_at == new.updated_at)
+    def test_save(self):
+        '''Check if the attribute updated_at (date) is updated for
+        the same object with the current date'''
+        first_updated = self.obj.updated_at
+        self.obj.save()
+        second_updated = self.obj.updated_at
+        self.assertNotEqual(first_updated, second_updated)
+        os.remove("file.json")
+
+    def test_to_dict(self):
+        '''Check if to_dict returns a correct dictionary of the class.'''
+        dict_obj = self.obj.to_dict()
+        self.assertIsInstance(dict_obj, dict)
+        for key, value in dict_obj.items():
+            check = 0
+            if dict_obj['__class__'] == 'BaseModel':
+                check += 1
+            self.assertTrue(check == 1)
+        for key, value in dict_obj.items():
+            if key == 'created_at':
+                self.assertIsInstance(value, str)
+            if key == 'updated_at':
+                self.assertIsInstance(value, str)
+
+    def test_kwargs(self):
+        '''Check when a dictionary is sent as **kwargs argument'''
+        self.obj.name = "Betty"
+        self.obj.my_number = 89
+        obj_json = self.obj.to_dict()
+        obj_kwargs = BaseModel(**obj_json)
+        self.assertNotEqual(obj_kwargs, self.obj)
+
+    def test_using_json(self):
+        '''Check serialization and deserialization json file'''
+        storage = FileStorage()
+        all_objs = storage.all()
+        self.assertIsInstance(all_objs, dict, "es diccionario")  # Test all
+        self.obj.name = "Betty"
+        self.obj.my_number = 89
+        self.obj.save()
+        with open("file.json", "r", encoding='utf-8') as f:
+            self.assertTrue(self.obj.name in f.read())  # Test save
